@@ -17,13 +17,11 @@ export const config = {
   // Path prefix for every internal link, e.g. "/AGT-Tinyhost" ("" when the site is at a domain root).
   // BASE_PATH overrides it for mirrors served from a domain root (e.g. the tiiny.host copy).
   basePath: process.env.BASE_PATH !== undefined ? stripSlash(process.env.BASE_PATH) : stripSlash(new URL(siteUrl).pathname),
-  // Brochure-only build (no admin, no forms, no data collection) for hosts with strict free-plan scanning.
+  // Brochure build for tiiny.host's free plan: no admin page and no airline-brand list.
   brochure: env('BROCHURE', 'false') === 'true',
   // GitHub repo the live admin saves posts into.
   repo: env('GITHUB_REPOSITORY', file.repo),
   branch: file.branch || 'main',
-  // Free lead inbox: Google Apps Script web app URL (…/exec) from google-apps-script/Code.gs.
-  leadsWebAppUrl: env('LEADS_WEBAPP_URL', file.leadsWebAppUrl || ''),
   // Google Search Console HTML-tag verification code (content="…" value only).
   googleSiteVerification: file.googleSiteVerification || '',
   port: Number(env('PORT', '3000')),
@@ -35,10 +33,6 @@ export const config = {
     admin: path.join(ROOT, 'admin'),
   },
 };
-
-// Where the quote form submits. Without a Google web app the form has nowhere to go,
-// so it falls back to the contact page (visitors can still call).
-config.leadEndpoint = config.leadsWebAppUrl;
 
 // Brand facts used across every generated page. Change the phone number here only.
 export const brand = {

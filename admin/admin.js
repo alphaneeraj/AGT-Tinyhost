@@ -1,4 +1,4 @@
-/* AGT live admin – a static page that saves posts to GitHub and reads leads from a Google Sheet.
+/* AGT live admin – a static page that saves posts to GitHub.
  * No server: every save is a commit; GitHub Actions rebuilds and deploys the site. */
 (function () {
   'use strict';
@@ -7,7 +7,6 @@
   var GH_API = S.githubApi || 'https://api.github.com';
   var RAW = S.rawBase || ('https://raw.githubusercontent.com/' + S.repo + '/' + S.branch);
   var DIRS = { blog: 'content/blog', flight: 'content/flights' };
-  var STATUSES = ['new', 'contacted', 'quoted', 'booked', 'closed', 'spam'];
   var STORE = 'agt_admin_auth';
 
   var $ = function (sel, root) { return (root || document).querySelector(sel); };
@@ -20,11 +19,10 @@
   var fmt = function (iso) { return iso ? new Date(iso).toLocaleString() : '—'; };
   var nowIso = function () { return new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'); };
 
-  var auth = null;           // { token, leadsKey }
+  var auth = null;           // { token }
   var listType = 'blog';
   var postsCache = {};       // type -> [{ post, sha, path }]
   var editing = null;        // { post, sha, path } or null for new
-  var leadsCache = [];
   var quill = null;
   var dirty = false;
 
@@ -127,39 +125,6 @@
     return gh('DELETE', repoPath(path), { message: message, sha: sha, branch: S.branch });
   }
 
-  // ---- Google Sheet leads ------------------------------------------------------------
-
-  function leadsReady() { return !!(S.leadsWebAppUrl && auth && auth.leadsKey); }
-
-  function fetchLeads() {
-    if (!leadsReady()) return Promise.reject(new Error(S.leadsWebAppUrl
-      ? 'Add your Leads key (sign out and sign in again) to see leads.'
-      : 'The Google Sheet lead inbox is not connected yet – see README “Free lead inbox”.'));
-    return fetch(S.leadsWebAppUrl + (S.leadsWebAppUrl.indexOf('?') === -1 ? '?' : '&') + 'token=' + encodeURIComponent(auth.leadsKey), { cache: 'no-store' })
-      .then(function (r) { return r.json(); })
-      .then(function (d) {
-        if (!d.ok) throw new Error(d.error === 'unauthorized' ? 'Leads key is wrong.' : (d.error || 'Could not load leads'));
-        leadsCache = d.leads || [];
-        updateLeadBadge();
-        return leadsCache;
-      });
-  }
-
-  function leadAction(body) {
-    body.token = auth.leadsKey;
-    // text/plain keeps this a "simple" request, so the browser doesn't need CORS preflight.
-    return fetch(S.leadsWebAppUrl, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body) })
-      .then(function (r) { return r.json(); })
-      .then(function (d) { if (!d.ok) throw new Error(d.error || 'Lead update failed'); return d; });
-  }
-
-  function updateLeadBadge() {
-    var n = leadsCache.filter(function (l) { return l.status === 'new'; }).length;
-    var badge = $('#new-leads-badge');
-    badge.hidden = !n;
-    badge.textContent = n;
-  }
-
   // ---- UI helpers ------------------------------------------------------------------
 
   function toast(text, isError) {
@@ -202,13 +167,12 @@
   $('#login-form').addEventListener('submit', function (e) {
     e.preventDefault();
     var f = e.target;
-    var candidate = { token: f.token.value.trim(), leadsKey: f.leadsKey.value.trim() };
+    var candidate = { token: f.token.value.trim() };
     auth = candidate;
     $('#login-error').textContent = 'Checking…';
     gh('GET', '/repos/' + S.repo).then(function () {
       saveAuth(candidate, f.remember.checked);
       f.token.value = '';
-      f.leadsKey.value = '';
       start();
     }).catch(function (err) {
       auth = null;
@@ -227,7 +191,6 @@
     $('#live-link').href = S.siteUrl + '/';
     route();
     refreshDeploys();
-    if (leadsReady()) fetchLeads().catch(function () {});
   }
 
   // ---- routing -------------------------------------------------------------------
@@ -245,7 +208,6 @@
       return loadList();
     }
     setNav(parts[0]);
-    if (parts[0] === 'leads') { show('leads'); return loadLeads(); }
     if (parts[0] === 'site') { show('site'); return loadSite(); }
     show('dashboard');
     loadDashboard();
@@ -282,8 +244,7 @@
   function loadSite() {
     $('#site-status').innerHTML =
       '<dt>Live site</dt><dd><a href="' + esc(S.siteUrl) + '/" target="_blank" rel="noopener">' + esc(S.siteUrl) + '</a></dd>' +
-      '<dt>Content repository</dt><dd><a href="https://github.com/' + esc(S.repo) + '" target="_blank" rel="noopener">' + esc(S.repo) + '</a> (' + esc(S.branch) + ')</dd>' +
-      '<dt>Lead inbox</dt><dd>' + (S.leadsWebAppUrl ? 'Google Sheet connected' + (auth.leadsKey ? '' : ' – leads key not entered') : 'Not connected yet') + '</dd>';
+      '<dt>Content repository</dt><dd><a href="https://github.com/' + esc(S.repo) + '" target="_blank" rel="noopener">' + esc(S.repo) + '</a> (' + esc(S.branch) + ')</dd>';
     $('#deploys').innerHTML = '<p class="muted">Loading…</p>';
     refreshDeploys().then(function (runs) {
       $('#deploys').innerHTML = runs.length
@@ -302,152 +263,16 @@
   function loadDashboard() {
     Promise.all([listPosts('blog'), listPosts('flight')]).then(function (r) {
       var pub = function (l) { return l.filter(function (x) { return x.post.status === 'published'; }).length; };
-      var leadStats = leadsReady() ? fetchLeads().catch(function () { return null; }) : Promise.resolve(null);
-      return leadStats.then(function (leads) {
-        var weekAgo = Date.now() - 7 * 864e5;
-        var tiles = [];
-        if (leads) {
-          tiles.push(['New leads', leads.filter(function (l) { return l.status === 'new'; }).length, '#leads']);
-          tiles.push(['Leads (7 days)', leads.filter(function (l) { return new Date(l.created_at) >= weekAgo; }).length, '#leads']);
-          tiles.push(['Total leads', leads.length, '#leads']);
-        }
-        tiles.push(['Blog posts', pub(r[0]) + ' <small>/ ' + r[0].length + '</small>', '#blog']);
-        tiles.push(['Flight pages', pub(r[1]) + ' <small>/ ' + r[1].length + '</small>', '#flight']);
-        $('#stats').innerHTML = tiles.map(function (x) {
-          return '<a class="stat" href="' + x[2] + '"><span>' + x[0] + '</span><strong>' + x[1] + '</strong></a>';
-        }).join('');
-        $('#dash-leads').innerHTML = !leadsReady()
-          ? '<p class="muted">' + (S.leadsWebAppUrl ? 'Enter your Leads key at sign-in to see leads here.' : 'Connect the free Google Sheet lead inbox (README → “Free lead inbox”).') + '</p>'
-          : leads && leads.length ? leadTable(leads.slice(0, 5), true) : '<p class="muted">No leads yet.</p>';
-      });
+      $('#stats').innerHTML = [
+        ['Blog posts', pub(r[0]) + ' <small>/ ' + r[0].length + '</small>', '#blog'],
+        ['Flight pages', pub(r[1]) + ' <small>/ ' + r[1].length + '</small>', '#flight'],
+        ['Write a blog post', '+', '#blog/new'],
+        ['Add a flight page', '+', '#flight/new'],
+      ].map(function (x) {
+        return '<a class="stat" href="' + x[2] + '"><span>' + x[0] + '</span><strong>' + x[1] + '</strong></a>';
+      }).join('');
     }).catch(function (err) { toast(err.message, true); });
   }
-
-  // ---- leads -----------------------------------------------------------------------
-
-  function leadTable(list, compact) {
-    return '<div class="table-wrap"><table class="table"><thead><tr><th>Received</th><th>Name</th><th>Contact</th><th>Trip</th><th>Group</th><th>Status</th>' +
-      (compact ? '' : '<th></th>') + '</tr></thead><tbody>' +
-      list.map(function (l) {
-        var id = esc(l.id);
-        return '<tr class="lead-row' + (l.status === 'new' ? ' is-new' : '') + '">' +
-          '<td>' + fmt(l.created_at) + '</td>' +
-          '<td><strong>' + esc(l.name) + '</strong></td>' +
-          '<td><a href="tel:' + esc(l.phone) + '">' + esc(l.phone) + '</a><br /><a href="mailto:' + esc(l.email) + '">' + esc(l.email) + '</a></td>' +
-          '<td>' + esc(l.from_city) + ' → ' + esc(l.to_city) + '<br /><small>' + esc(l.depart_date) + (l.return_date ? ' – ' + esc(l.return_date) : '') + ' · ' + esc(l.trip_type) + '</small></td>' +
-          '<td>' + esc(l.passengers) + '<br /><small>' + esc(l.cabin) + '</small></td>' +
-          '<td>' + (compact ? '<span class="pill pill--' + esc(l.status) + '">' + esc(l.status) + '</span>'
-            : '<select class="lead-status" data-id="' + id + '">' + STATUSES.map(function (s) {
-              return '<option' + (s === l.status ? ' selected' : '') + '>' + s + '</option>';
-            }).join('') + '</select>') + '</td>' +
-          (compact ? '' : '<td><button class="link lead-more" data-id="' + id + '">Details</button></td>') +
-          '</tr>' +
-          (compact ? '' : '<tr class="lead-detail" data-for="' + id + '" hidden><td colspan="7">' +
-            '<div class="lead-detail__grid">' +
-            '<div><h4>Message</h4><p>' + (esc(l.message) || '<span class="muted">—</span>') + '</p>' +
-            '<h4>Source</h4><p>Page: <code>' + esc(l.source_page) + '</code><br />UTM: <code>' + (esc(l.utm) || '—') + '</code></p></div>' +
-            '<div><h4>Internal notes</h4><textarea class="lead-notes" data-id="' + id + '" rows="4">' + esc(l.notes) + '</textarea>' +
-            '<div class="row"><button class="btn lead-save" data-id="' + id + '">Save notes</button>' +
-            '<button class="btn btn--danger lead-delete" data-id="' + id + '">Delete lead</button></div></div>' +
-            '</div></td></tr>');
-      }).join('') + '</tbody></table></div>';
-  }
-
-  function filteredLeads() {
-    var q = $('#lead-search').value.trim().toLowerCase();
-    var st = $('#lead-status').value;
-    return leadsCache.filter(function (l) {
-      if (st && l.status !== st) return false;
-      if (!q) return true;
-      return [l.name, l.email, l.phone, l.from_city, l.to_city].join(' ').toLowerCase().indexOf(q) !== -1;
-    });
-  }
-
-  function renderLeads() {
-    var list = filteredLeads();
-    $('#lead-list').innerHTML = list.length ? leadTable(list, false) : '<p class="empty">No leads match.</p>';
-  }
-
-  function loadLeads() {
-    $('#leads-msg').textContent = 'Loading leads…';
-    fetchLeads().then(function () {
-      $('#leads-msg').textContent = leadsCache.length + ' lead(s) in the Google Sheet · updated ' + new Date().toLocaleTimeString();
-      renderLeads();
-    }).catch(function (err) {
-      $('#leads-msg').textContent = err.message;
-      $('#lead-list').innerHTML = '';
-    });
-  }
-
-  $('#lead-search').addEventListener('input', renderLeads);
-  $('#lead-status').addEventListener('change', renderLeads);
-  $('#lead-refresh').addEventListener('click', loadLeads);
-
-  $('#lead-csv').addEventListener('click', function () {
-    var cols = ['created_at', 'status', 'name', 'phone', 'email', 'from_city', 'to_city', 'depart_date', 'return_date', 'passengers', 'trip_type', 'cabin', 'message', 'notes', 'source_page', 'utm'];
-    var cell = function (v) {
-      var s = String(v == null ? '' : v);
-      if (/^([=@\t\r]|[+\-](?![\d\s(]))/.test(s)) s = "'" + s;
-      return '"' + s.replace(/"/g, '""') + '"';
-    };
-    var csv = '﻿' + [cols.join(',')].concat(filteredLeads().map(function (l) {
-      return cols.map(function (c) { return cell(l[c]); }).join(',');
-    })).join('\r\n');
-    var a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
-    a.download = 'agt-leads-' + new Date().toISOString().slice(0, 10) + '.csv';
-    a.click();
-    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
-  });
-
-  var findLead = function (id) { return leadsCache.filter(function (l) { return l.id === id; })[0]; };
-
-  $('#lead-list').addEventListener('click', function (e) {
-    var t = e.target;
-    var id = t.getAttribute('data-id');
-    if (t.classList.contains('lead-more')) {
-      var row = $$('.lead-detail').filter(function (r) { return r.getAttribute('data-for') === id; })[0];
-      row.hidden = !row.hidden;
-      t.textContent = row.hidden ? 'Details' : 'Hide';
-    } else if (t.classList.contains('lead-save')) {
-      var notes = $$('.lead-notes').filter(function (n) { return n.getAttribute('data-id') === id; })[0].value;
-      t.disabled = true;
-      leadAction({ action: 'update', id: id, notes: notes })
-        .then(function () { findLead(id).notes = notes; toast('Notes saved'); })
-        .catch(function (err) { toast(err.message, true); })
-        .finally(function () { t.disabled = false; });
-    } else if (t.classList.contains('lead-delete')) {
-      if (!confirm('Delete this lead from the Google Sheet permanently?')) return;
-      leadAction({ action: 'delete', id: id }).then(function () {
-        leadsCache = leadsCache.filter(function (l) { return l.id !== id; });
-        updateLeadBadge();
-        renderLeads();
-        toast('Lead deleted');
-      }).catch(function (err) { toast(err.message, true); });
-    }
-  });
-
-  $('#lead-list').addEventListener('change', function (e) {
-    if (!e.target.classList.contains('lead-status')) return;
-    var id = e.target.getAttribute('data-id');
-    var status = e.target.value;
-    leadAction({ action: 'update', id: id, status: status }).then(function () {
-      findLead(id).status = status;
-      e.target.closest('tr').classList.toggle('is-new', status === 'new');
-      updateLeadBadge();
-      toast('Status updated');
-    }).catch(function (err) { toast(err.message, true); });
-  });
-
-  // Check for new leads every 2 minutes while the admin is open.
-  setInterval(function () {
-    if (!auth || !leadsReady()) return;
-    var before = leadsCache.length;
-    fetchLeads().then(function (list) {
-      if (list.length > before && before) toast('New lead received!');
-      if (location.hash === '#leads') renderLeads();
-    }).catch(function () {});
-  }, 120000);
 
   // ---- post list -------------------------------------------------------------------
 

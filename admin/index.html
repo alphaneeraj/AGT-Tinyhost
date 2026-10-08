@@ -16,12 +16,9 @@
   <form id="login-form" class="login__box">
     <img src="../favicon.svg" width="48" height="48" alt="" />
     <h1>AGT Admin</h1>
-    <p class="muted">Blog, flight pages &amp; leads</p>
+    <p class="muted">Blog posts &amp; flight pages</p>
     <label>GitHub access token
       <input name="token" type="password" autocomplete="off" required placeholder="github_pat_…" />
-    </label>
-    <label>Leads key <span class="muted">(the SECRET from Code.gs)</span>
-      <input name="leadsKey" type="password" autocomplete="off" />
     </label>
     <label class="check"><input type="checkbox" name="remember" checked /> Keep me signed in on this device</label>
     <button class="btn btn--primary" type="submit">Sign in</button>
@@ -36,7 +33,6 @@
     <a class="side__brand" href="#dashboard"><img src="../favicon.svg" width="30" height="30" alt="" /> AGT Admin</a>
     <nav>
       <a href="#dashboard" data-nav="dashboard">Dashboard</a>
-      <a href="#leads" data-nav="leads">Leads <span id="new-leads-badge" class="badge" hidden></span></a>
       <a href="#blog" data-nav="blog">Blog posts</a>
       <a href="#flight" data-nav="flight">Flight pages</a>
       <a href="#site" data-nav="site">Site &amp; deploys</a>
@@ -53,29 +49,6 @@
     <section data-view="dashboard" hidden>
       <h1>Dashboard</h1>
       <div class="stats" id="stats"></div>
-      <div class="panel">
-        <h2>Latest leads</h2>
-        <div id="dash-leads"></div>
-      </div>
-    </section>
-
-    <!-- Leads -->
-    <section data-view="leads" hidden>
-      <div class="head">
-        <h1>Leads</h1>
-        <div class="head__actions">
-          <input id="lead-search" type="search" placeholder="Search name, email, phone, city…" />
-          <select id="lead-status">
-            <option value="">All statuses</option>
-            <option value="new">New</option><option value="contacted">Contacted</option><option value="quoted">Quoted</option>
-            <option value="booked">Booked</option><option value="closed">Closed</option><option value="spam">Spam</option>
-          </select>
-          <button class="btn" id="lead-refresh">Refresh</button>
-          <button class="btn" id="lead-csv">Export CSV</button>
-        </div>
-      </div>
-      <p id="leads-msg" class="msg"></p>
-      <div id="lead-list"></div>
     </section>
 
     <!-- Post lists (blog + flight share one view) -->

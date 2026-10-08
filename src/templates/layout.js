@@ -234,55 +234,17 @@ export function breadcrumbs(crumbs) {
   return `<nav class="crumbs wrap" aria-label="Breadcrumb"><ol>${items}</ol></nav>`;
 }
 
-export function leadForm({ heading = 'Get a free group fare quote', compact = false, source = '/' } = {}) {
-  if (config.brochure) {
-    // Brochure build: no data collection on this host – send visitors to the phone line or the full site's form.
-    return `
+// "Get a quote" box shown in the hero and sidebars: phone and email only, no form or data collection.
+export function quoteBox({ heading = 'Get a free group fare quote', compact = false } = {}) {
+  const mail = `mailto:${brand.email}?subject=${encodeURIComponent('Group flight quote request')}`;
+  return `
 <div class="lead-form${compact ? ' lead-form--compact' : ''}">
   <h2 class="lead-form__title">${esc(heading)}</h2>
   <p class="lead-form__sub">Travelling with 10 or more people? Speak with a group travel specialist, 24/7.</p>
   <p>${phoneLink(`Call ${brand.phone}`, 'btn btn--primary btn--lg')}</p>
-  <p><a class="btn btn--ghost btn--lg" href="${esc(config.siteUrl)}/contact/">Request a quote online</a></p>
-  <p class="lead-form__sub">Or email <a href="mailto:${brand.email}">${brand.email}</a></p>
+  <p><a class="btn btn--ghost btn--lg" href="${mail}">Email us for a quote</a></p>
+  <p class="lead-form__sub">Tell us your cities, dates and group size and we'll reply with options.</p>
 </div>`;
-  }
-  return `
-<form class="lead-form${compact ? ' lead-form--compact' : ''}" method="POST" action="${esc(config.leadEndpoint || '/contact/')}" data-lead-form data-endpoint="${esc(config.leadEndpoint)}" data-thanks="${config.basePath}/thank-you/">
-  <h2 class="lead-form__title">${esc(heading)}</h2>
-  <p class="lead-form__sub">10+ travellers? Tell us your trip and a specialist will call you back. Prefer to talk now? ${phoneLink()}</p>
-  <div class="lead-form__grid">
-    <label>Full name<input name="name" required maxlength="120" autocomplete="name" /></label>
-    <label>Phone<input name="phone" type="tel" required maxlength="40" autocomplete="tel" inputmode="tel" /></label>
-    <label>Email<input name="email" type="email" required maxlength="160" autocomplete="email" /></label>
-    <label>Group size
-      <select name="passengers" required>
-        <option value="">Select</option>
-        <option>10–19</option><option>20–49</option><option>50–99</option><option>100+</option><option>Under 10</option>
-      </select>
-    </label>
-    <label>Flying from<input name="from_city" required maxlength="120" placeholder="City or airport" /></label>
-    <label>Flying to<input name="to_city" required maxlength="120" placeholder="City or airport" /></label>
-    <label>Departure date<input name="depart_date" type="date" required /></label>
-    <label>Return date<input name="return_date" type="date" /></label>
-    <label>Trip type
-      <select name="trip_type">
-        <option>Round trip</option><option>One way</option><option>Multi-city</option>
-      </select>
-    </label>
-    <label>Cabin
-      <select name="cabin">
-        <option>Economy</option><option>Premium Economy</option><option>Business</option><option>First</option>
-      </select>
-    </label>
-    <label class="lead-form__full">Trip details (optional)<textarea name="message" rows="3" maxlength="2000" placeholder="Event, flexible dates, preferred airline…"></textarea></label>
-  </div>
-  <div class="hp" aria-hidden="true"><label>Website<input name="website" tabindex="-1" autocomplete="off" /></label></div>
-  <input type="hidden" name="source_page" value="${esc(source)}" />
-  <input type="hidden" name="utm" value="" />
-  <input type="hidden" name="ts" value="" />
-  <label class="lead-form__consent"><input type="checkbox" name="consent" value="yes" required /> I agree to be contacted about my trip by phone, SMS or email.</label>
-  <button class="btn btn--primary btn--lg" type="submit">Get my group quote</button>
-</form>`;
 }
 
 export function faqBlock(faqs, heading = 'Frequently asked questions') {

@@ -5,8 +5,8 @@ import { publishedPosts } from './content.js';
 import { abs, esc, stripHtml, truncate } from './templates/layout.js';
 import {
   AIRLINES, DESTINATIONS, GROUP_FAQS, HOME_FAQS,
-  aboutPage, contactPage, detailPage, formErrorPage, groupTravelPage, homePage, legalPage,
-  listingPage, notFoundPage, parseFaqs, thankYouPage,
+  aboutPage, contactPage, detailPage, groupTravelPage, homePage, legalPage,
+  listingPage, notFoundPage, parseFaqs,
 } from './templates/pages.js';
 
 const PER_PAGE = 12;
@@ -82,8 +82,6 @@ function robotsTxt() {
   return `# ${brand.name} – ${config.siteUrl}
 User-agent: *
 Allow: /
-Disallow: ${config.basePath}/thank-you/
-Disallow: ${config.basePath}/form-error/
 Disallow: ${config.basePath}/admin/
 
 # AI / LLM crawlers are welcome – see /llms.txt
@@ -186,7 +184,7 @@ ${brand.name} negotiates discounted group airfares for teams, schools, weddings,
 
 Benefits: discounted group fares; book now, pay later with staged deposits; one point of contact; 200+ airlines worldwide; business class and private jet charter.
 
-How it works: 1) share your trip by phone (${brand.phone}) or the quote form; 2) compare group fare offers from several airlines; 3) hold seats with a deposit; 4) submit names and receive e-tickets.
+How it works: 1) share your trip by phone (${brand.phone}) or email (${brand.email}); 2) compare group fare offers from several airlines; 3) hold seats with a deposit; 4) submit names and receive e-tickets.
 
 Popular airlines for group booking: ${AIRLINES.map(([n]) => n).join(', ')}.
 Popular group destinations: ${DESTINATIONS.map(([n]) => n).join(', ')}.
@@ -252,7 +250,6 @@ function buildAdmin(dist) {
     basePath: config.basePath,
     repo: config.repo,
     branch: config.branch,
-    leadsWebAppUrl: config.leadsWebAppUrl,
   };
   fs.writeFileSync(path.join(out, 'settings.js'), `window.AGT_SETTINGS = ${JSON.stringify(settings, null, 2)};\n`);
 }
@@ -284,10 +281,6 @@ export function buildSite() {
   write(tmp, '/contact/', contactPage());
   write(tmp, '/privacy-policy/', legalPage('privacy'));
   write(tmp, '/disclaimer/', legalPage('disclaimer'));
-  if (!config.brochure) {
-    write(tmp, '/thank-you/', thankYouPage());
-    write(tmp, '/form-error/', formErrorPage());
-  }
   write(tmp, '/404.html', notFoundPage());
 
   for (const [p, , , priority, changefreq] of STATIC_PAGES) {

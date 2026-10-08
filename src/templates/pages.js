@@ -1,6 +1,6 @@
 import { brand, config } from '../config.js';
 import {
-  abs, esc, faqBlock, faqSchema, formatDate, leadForm, page, phoneLink, readingMinutes, stripHtml, truncate, orgId,
+  abs, esc, faqBlock, faqSchema, formatDate, page, quoteBox, phoneLink, readingMinutes, stripHtml, truncate, orgId,
 } from './layout.js';
 
 const HOME = { name: 'Home', path: '/' };
@@ -43,7 +43,7 @@ const HOME_FAQS = [
   },
   {
     q: 'How do I get a group flight quote?',
-    a: `Call ${brand.phone} any time, 24/7, or fill in the quote form on this page. A group travel specialist will compare fares across 200+ airlines and send you options.`,
+    a: `Call ${brand.phone} any time, 24/7, or email ${brand.email}. A group travel specialist will compare fares across 200+ airlines and send you options.`,
   },
 ];
 
@@ -108,10 +108,10 @@ export function homePage({ blogs, flights }) {
       </ul>
       <div class="hero__ctas">
         ${phoneLink(`Call ${brand.phone}`, 'btn btn--primary btn--lg')}
-        <a class="btn btn--ghost btn--lg" href="#quote">Get a free quote</a>
+        <a class="btn btn--ghost btn--lg" href="/contact/">Get a free quote</a>
       </div>
     </div>
-    <div class="hero__form" id="quote">${leadForm({ compact: true, source: '/' })}</div>
+    <div class="hero__form">${quoteBox({ compact: true })}</div>
   </div>
 </section>
 
@@ -152,7 +152,7 @@ ${flights.length ? `
 <section class="wrap section">
   <h2 class="section__title">How group booking works</h2>
   <ol class="steps">
-    <li><strong>Share your trip.</strong> Call ${phoneLink()} or send the quote form with dates, cities and group size.</li>
+    <li><strong>Share your trip.</strong> Call ${phoneLink()} or email us your dates, cities and group size.</li>
     <li><strong>Compare offers.</strong> We request group fares from multiple airlines and send you the best options.</li>
     <li><strong>Hold your seats.</strong> Confirm with a deposit; fares are locked for the whole group.</li>
     <li><strong>Add names &amp; fly.</strong> Submit the passenger list before the deadline and receive e-tickets.</li>
@@ -196,7 +196,7 @@ export function groupTravelPage() {
     <p>Our reservations desk is open 24/7. Call ${phoneLink()} and mention code <strong>AGT40</strong> for an additional discount on eligible bookings.</p>
     ${faqBlock(GROUP_FAQS)}
   </article>
-  <aside class="sidebar">${leadForm({ compact: true, source: '/group-travel/' })}</aside>
+  <aside class="sidebar">${quoteBox({ compact: true })}</aside>
 </div>`;
   return page({
     path: '/group-travel/',
@@ -253,14 +253,14 @@ export function contactPage() {
 <div class="wrap content-grid">
   <div class="prose">
     <h1>Contact Airlines Group Travel</h1>
-    <p class="lead">Get a free, no-obligation group airfare quote. Our specialists reply quickly — or call us now for an instant answer.</p>
+    <p class="lead">Get a free, no-obligation group airfare quote. Call us any time for an instant answer, or email your trip details.</p>
     <div class="contact-cards">
       <div class="contact-card"><h2>Call 24/7</h2><p>${phoneLink(brand.phone, 'big-phone')}</p></div>
       <div class="contact-card"><h2>Email</h2><p><a href="mailto:${brand.email}">${brand.email}</a></p></div>
       <div class="contact-card"><h2>Office</h2><address>${esc(brand.address.street)}<br />${esc(brand.address.city)}, ${esc(brand.address.region)} ${esc(brand.address.postalCode)}</address></div>
     </div>
   </div>
-  <aside class="sidebar">${leadForm({ heading: 'Request a group quote', source: '/contact/' })}</aside>
+  <aside class="sidebar">${quoteBox({ heading: 'Request a group quote' })}</aside>
 </div>`;
   return page({
     path: '/contact/',
@@ -272,43 +272,6 @@ export function contactPage() {
   });
 }
 
-export function thankYouPage() {
-  const body = `
-<div class="wrap prose prose--narrow center">
-  <h1>Thank you – we’ve received your request</h1>
-  <p class="lead">A group travel specialist will contact you shortly with fare options.</p>
-  <p>Need an answer right now? Call us 24/7:</p>
-  <p>${phoneLink(`Call ${brand.phone}`, 'btn btn--primary btn--lg')}</p>
-  <p><a href="/blog/">Read our group travel guides</a> while you wait.</p>
-</div>`;
-  return page({
-    path: '/thank-you/',
-    title: `Thank You | ${brand.name}`,
-    description: 'Your group flight quote request has been received.',
-    body,
-    crumbs: [HOME, { name: 'Thank you', path: '/thank-you/' }],
-    noindex: true,
-  });
-}
-
-export function formErrorPage() {
-  const body = `
-<div class="wrap prose prose--narrow center">
-  <h1>We couldn’t submit your request</h1>
-  <p class="lead">Some details were missing or invalid. Please go back and check the form, or call us — we’re available 24/7.</p>
-  <p>${phoneLink(`Call ${brand.phone}`, 'btn btn--primary btn--lg')}</p>
-  <p><a href="/contact/">Back to the quote form</a></p>
-</div>`;
-  return page({
-    path: '/form-error/',
-    title: `Request Not Sent | ${brand.name}`,
-    description: 'There was a problem submitting your request.',
-    body,
-    crumbs: [HOME, { name: 'Form error', path: '/form-error/' }],
-    noindex: true,
-  });
-}
-
 export function legalPage(kind) {
   const isPrivacy = kind === 'privacy';
   const path = isPrivacy ? '/privacy-policy/' : '/disclaimer/';
@@ -317,9 +280,7 @@ export function legalPage(kind) {
     ? `
   <p>This policy explains how ${esc(brand.name)} handles information submitted through this website.</p>
   <h2>Information we collect</h2>
-  <p>When you request a quote we collect the details you enter — name, phone, email, travel dates, cities, group size and any message — together with the page you submitted from, campaign (UTM) parameters, your IP address and browser user agent for fraud prevention.</p>
-  <h2>How we use it</h2>
-  <p>We use your information only to respond to your enquiry, prepare quotes and service your booking. We do not sell your personal information.</p>
+  <p>This website has no forms and does not collect personal information. If you call or email us, we use the details you share only to answer your enquiry, prepare quotes and service your booking. We do not sell your personal information.</p>
   <h2>Cookies and tracking</h2>
   <p>This site does not use advertising or third-party tracking cookies.</p>
   <h2>Your choices</h2>
@@ -487,7 +448,7 @@ export function detailPage(post, related) {
       ${phoneLink(`Call ${brand.phone}`, 'btn btn--primary')}
     </div>
   </article>
-  <aside class="sidebar">${leadForm({ compact: true, source: path })}</aside>
+  <aside class="sidebar">${quoteBox({ compact: true })}</aside>
 </div>
 <div class="wrap">${relatedHtml}</div>`;
 
