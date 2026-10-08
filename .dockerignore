@@ -1,0 +1,8 @@
+node_modules
+.env
+data
+dist
+dist.tmp
+uploads/*
+.git
+.claude

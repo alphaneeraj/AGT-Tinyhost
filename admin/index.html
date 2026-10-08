@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex, nofollow" />
+<title>AGT Admin</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="stylesheet" href="/admin/vendor/quill/quill.snow.css" />
+<link rel="stylesheet" href="/admin/admin.css" />
+</head>
+<body>
+
+<!-- Login -->
+<section id="login-view" class="login" hidden>
+  <form id="login-form" class="login__box">
+    <img src="/favicon.svg" width="48" height="48" alt="" />
+    <h1>AGT Admin</h1>
+    <p class="muted">Blog, flight pages &amp; leads</p>
+    <label>Username<input name="username" autocomplete="username" required /></label>
+    <label>Password<input name="password" type="password" autocomplete="current-password" required /></label>
+    <button class="btn btn--primary" type="submit">Sign in</button>
+    <p id="login-error" class="error" role="alert"></p>
+  </form>
+</section>
+
+<!-- App -->
+<div id="app-view" class="app" hidden>
+  <aside class="side">
+    <a class="side__brand" href="#dashboard"><img src="/favicon.svg" width="30" height="30" alt="" /> AGT Admin</a>
+    <nav>
+      <a href="#dashboard" data-nav="dashboard">Dashboard</a>
+      <a href="#leads" data-nav="leads">Leads <span id="new-leads-badge" class="badge" hidden></span></a>
+      <a href="#blog" data-nav="blog">Blog posts</a>
+      <a href="#flight" data-nav="flight">Flight pages</a>
+      <a href="#publish" data-nav="publish">Build &amp; publish</a>
+    </nav>
+    <div class="side__foot">
+      <a href="/" id="preview-link">Local preview ↗</a>
+      <a href="#" id="live-link">Live site ↗</a>
+      <button id="logout" class="link">Sign out</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <!-- Dashboard -->
+    <section data-view="dashboard" hidden>
+      <h1>Dashboard</h1>
+      <div class="stats" id="stats"></div>
+      <div class="panel">
+        <h2>Latest leads</h2>
+        <div id="dash-leads"></div>
+      </div>
+      <div class="panel">
+        <h2>Site status</h2>
+        <dl class="kv" id="site-status"></dl>
+      </div>
+    </section>
+
+    <!-- Leads -->
+    <section data-view="leads" hidden>
+      <div class="head">
+        <h1>Leads</h1>
+        <div class="head__actions">
+          <input id="lead-search" type="search" placeholder="Search name, email, phone, city…" />
+          <select id="lead-status">
+            <option value="">All statuses</option>
+            <option value="new">New</option><option value="contacted">Contacted</option><option value="quoted">Quoted</option>
+            <option value="booked">Booked</option><option value="closed">Closed</option><option value="spam">Spam</option>
+          </select>
+          <a class="btn" id="lead-csv" href="/admin/api/leads.csv">Export CSV</a>
+        </div>
+      </div>
+      <div id="lead-list"></div>
+    </section>
+
+    <!-- Post lists (blog + flight share one view) -->
+    <section data-view="list" hidden>
+      <div class="head">
+        <h1 id="list-title">Posts</h1>
+        <div class="head__actions">
+          <select id="list-status"><option value="">All</option><option value="published">Published</option><option value="draft">Drafts</option></select>
+          <button class="btn btn--primary" id="new-post">+ New</button>
+        </div>
+      </div>
+      <div id="post-list"></div>
+    </section>
+
+    <!-- Editor -->
+    <section data-view="editor" hidden>
+      <form id="editor-form" class="editor" novalidate>
+        <div class="head">
+          <h1 id="editor-title">New post</h1>
+          <div class="head__actions">
+            <a class="btn" id="editor-view" href="#" hidden>View page ↗</a>
+            <button type="button" class="btn" id="editor-back">← Back</button>
+            <button type="submit" class="btn" data-status="draft">Save draft</button>
+            <button type="submit" class="btn btn--primary" data-status="published">Publish</button>
+          </div>
+        </div>
+        <p id="editor-msg" class="msg" role="status"></p>
+
+        <div class="editor__grid">
+          <div class="editor__main">
+            <label>Title<input name="title" required maxlength="200" /></label>
+            <label>URL slug <span class="muted" id="slug-preview"></span><input name="slug" maxlength="90" placeholder="auto-generated from title" /></label>
+            <div class="rte-head">
+              <span>Content</span>
+              <button type="button" class="link" id="html-toggle">Edit HTML</button>
+            </div>
+            <div id="quill"></div>
+            <textarea id="html-source" class="html-source" hidden spellcheck="false"></textarea>
+
+            <fieldset class="faqs">
+              <legend>FAQs <span class="muted">(shown on page + FAQPage schema)</span></legend>
+              <div id="faq-list"></div>
+              <button type="button" class="btn" id="faq-add">+ Add question</button>
+            </fieldset>
+          </div>
+
+          <div class="editor__side">
+            <div class="panel">
+              <h3>Publishing</h3>
+              <p>Status: <strong id="status-label">Draft</strong></p>
+              <label>Publish date<input name="published_at" type="datetime-local" /></label>
+              <label data-only="blog">Author<input name="author" maxlength="120" placeholder="Airlines Group Travel" /></label>
+              <label>Tags <span class="muted">(comma separated)</span><input name="tags" maxlength="300" /></label>
+            </div>
+
+            <div class="panel" data-only="flight">
+              <h3>Flight details</h3>
+              <label>Airline<input name="airline" maxlength="120" placeholder="e.g. Delta Air Lines" /></label>
+              <label>From<input name="origin" maxlength="120" placeholder="e.g. New York (JFK)" /></label>
+              <label>To<input name="destination" maxlength="120" placeholder="e.g. Paris (CDG)" /></label>
+              <label>Group fares from<input name="price_from" maxlength="40" placeholder="e.g. $489" /></label>
+            </div>
+
+            <div class="panel">
+              <h3>Cover image</h3>
+              <div id="cover-preview" class="cover-preview"></div>
+              <label>Image URL<input name="cover_image" maxlength="500" placeholder="/uploads/… or https://…" /></label>
+              <label class="btn btn--file">Upload image<input type="file" id="cover-file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif" hidden /></label>
+              <label>Alt text<input name="cover_alt" maxlength="200" /></label>
+            </div>
+
+            <div class="panel">
+              <h3>SEO</h3>
+              <label>Meta title <span class="count" data-for="meta_title" data-max="60"></span><input name="meta_title" maxlength="200" placeholder="defaults to Title | Airlines Group Travel" /></label>
+              <label>Meta description <span class="count" data-for="meta_description" data-max="160"></span><textarea name="meta_description" rows="3" maxlength="320"></textarea></label>
+              <label>Excerpt <span class="muted">(cards &amp; RSS)</span><textarea name="excerpt" rows="3" maxlength="400"></textarea></label>
+              <div class="serp" aria-label="Google preview">
+                <div class="serp__url" id="serp-url"></div>
+                <div class="serp__title" id="serp-title"></div>
+                <div class="serp__desc" id="serp-desc"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </form>
+    </section>
+
+    <!-- Build & publish -->
+    <section data-view="publish" hidden>
+      <h1>Build &amp; publish</h1>
+      <div class="panel">
+        <p>Every save rebuilds the static site automatically (pages, <code>sitemap.xml</code>, <code>feed.xml</code>, <code>llms.txt</code>, <code>llms-full.txt</code>, <code>robots.txt</code>). Publishing uploads the build to srht.site.</p>
+        <div class="row">
+          <button class="btn" id="btn-build">Rebuild now</button>
+          <button class="btn btn--primary" id="btn-publish">Publish to srht.site</button>
+        </div>
+        <p id="publish-msg" class="msg" role="status"></p>
+        <dl class="kv" id="publish-status"></dl>
+      </div>
+      <div class="panel">
+        <h2>Generated files</h2>
+        <ul class="links">
+          <li><a href="/sitemap.xml">sitemap.xml</a></li>
+          <li><a href="/robots.txt">robots.txt</a></li>
+          <li><a href="/llms.txt">llms.txt</a></li>
+          <li><a href="/llms-full.txt">llms-full.txt</a></li>
+          <li><a href="/feed.xml">feed.xml (RSS)</a></li>
+          <li><a href="/site.webmanifest">site.webmanifest</a></li>
+        </ul>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div id="toast" class="toast" role="status" hidden></div>
+<script src="/admin/vendor/quill/quill.js"></script>
+<script src="/admin/admin.js"></script>
+</body>
+</html>

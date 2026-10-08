@@ -1,0 +1,23 @@
+{
+  "name": "agt-tinyhost",
+  "version": "1.0.0",
+  "description": "Promotional static site for AirlinesGroupTravel.com hosted on srht.site, with an admin portal for blog posts, flight pages and leads.",
+  "type": "module",
+  "private": true,
+  "engines": { "node": ">=22.13" },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env server.js",
+    "dev": "node --watch --env-file-if-exists=.env server.js",
+    "build": "node --env-file-if-exists=.env scripts/build.js",
+    "publish:srht": "node --env-file-if-exists=.env scripts/publish.js",
+    "icons": "node scripts/generate-icons.js"
+  },
+  "license": "UNLICENSED",
+  "dependencies": {
+    "express": "^5.2.1",
+    "quill": "^2.0.3"
+  },
+  "devDependencies": {
+    "@resvg/resvg-js": "^2.6.2"
+  }
+}
