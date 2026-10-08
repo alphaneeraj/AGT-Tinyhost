@@ -30,11 +30,22 @@
     depart.min = today;
     ret.min = today;
     depart.addEventListener('change', function () { ret.min = depart.value || today; });
-    form.addEventListener('submit', function () {
+    form.addEventListener('submit', function (e) {
+      var endpoint = form.getAttribute('data-endpoint');
       var btn = form.querySelector('button[type=submit]');
+      e.preventDefault();
+      if (!endpoint) {
+        // No lead inbox configured yet – send the visitor to the phone line instead of losing the lead.
+        alert('Online quotes are temporarily unavailable. Please call us 24/7 on +1-888-609-1015.');
+        return;
+      }
       btn.disabled = true;
       btn.textContent = 'Sending…';
-      setTimeout(function () { btn.disabled = false; btn.textContent = 'Get my group quote'; }, 8000);
+      // Google Apps Script doesn't send CORS headers for POST, so send "no-cors" (the lead is still
+      // saved; we just can't read the reply) and then show our own thank-you page.
+      fetch(endpoint, { method: 'POST', mode: 'no-cors', body: new URLSearchParams(new FormData(form)) })
+        .then(function () { location.href = form.getAttribute('data-thanks'); })
+        .catch(function () { form.submit(); });
     });
   });
 })();

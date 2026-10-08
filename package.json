@@ -1,21 +1,20 @@
 {
   "name": "agt-tinyhost",
   "version": "1.0.0",
-  "description": "Promotional static site for AirlinesGroupTravel.com hosted on tiiny.host, with an admin portal for blog posts, flight pages and leads.",
+  "description": "Promotional website for AirlinesGroupTravel.com on GitHub Pages, with a free live admin for blog posts, flight pages and leads.",
   "type": "module",
   "private": true,
-  "engines": { "node": ">=22.13" },
+  "engines": {
+    "node": ">=22.13"
+  },
   "scripts": {
-    "start": "node --env-file-if-exists=.env server.js",
-    "dev": "node --watch --env-file-if-exists=.env server.js",
-    "build": "node --env-file-if-exists=.env scripts/build.js",
-    "zip": "node --env-file-if-exists=.env scripts/zip.js",
-    "publish:tiiny": "node --env-file-if-exists=.env scripts/publish.js",
+    "build": "node scripts/build.js",
+    "preview": "node --env-file-if-exists=.env scripts/serve.js",
+    "zip": "node scripts/zip.js",
     "icons": "node scripts/generate-icons.js"
   },
   "license": "UNLICENSED",
   "dependencies": {
-    "express": "^5.2.1",
     "quill": "^2.0.3"
   },
   "devDependencies": {

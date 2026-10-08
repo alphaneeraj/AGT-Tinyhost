@@ -1,37 +1,39 @@
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
+// Non-secret site settings live in site.config.json (committed, so GitHub Actions can build).
+const file = JSON.parse(fs.readFileSync(path.join(ROOT, 'site.config.json'), 'utf8'));
 const env = (key, fallback) => (process.env[key] ?? '').trim() || fallback;
 const stripSlash = (url) => url.replace(/\/+$/, '');
 
+const siteUrl = stripSlash(env('SITE_URL', file.siteUrl));
+
 export const config = {
+  // Public URL of the site, including the project path on GitHub Pages.
+  siteUrl,
+  // Path prefix for every internal link, e.g. "/AGT-Tinyhost" ("" when the site is at a domain root).
+  basePath: stripSlash(new URL(siteUrl).pathname),
+  // GitHub repo the live admin saves posts into.
+  repo: env('GITHUB_REPOSITORY', file.repo),
+  branch: file.branch || 'main',
+  // Free lead inbox: Google Apps Script web app URL (…/exec) from google-apps-script/Code.gs.
+  leadsWebAppUrl: env('LEADS_WEBAPP_URL', file.leadsWebAppUrl || ''),
   port: Number(env('PORT', '3000')),
-  // Public URL of the static site on tiiny.host (used for canonical URLs, sitemap, OG tags).
-  siteUrl: stripSlash(env('SITE_URL', 'https://airlinesgrouptravel.tiiny.site')),
-  // tiiny.host site domain to update via the API (usually the host part of SITE_URL).
-  tiinyDomain: env('TIINY_DOMAIN', ''),
-  // API key from tiiny.host → Manage Account (API access needs the Solo plan or higher).
-  tiinyApiKey: env('TIINY_API_KEY', ''),
-  autoPublish: env('AUTO_PUBLISH', 'false') === 'true',
-  // Public HTTPS URL of THIS server's lead endpoint. The static form posts here.
-  leadEndpoint: env('LEAD_ENDPOINT', 'http://localhost:3000/api/leads'),
-  adminUser: env('ADMIN_USER', 'admin'),
-  adminPassword: env('ADMIN_PASSWORD', ''),
-  sessionSecret: env('SESSION_SECRET', ''),
-  // Comma-separated list of origins allowed to post leads (defaults to SITE_URL origin).
-  allowedOrigins: env('ALLOWED_ORIGINS', ''),
   paths: {
-    db: path.join(ROOT, 'data', 'agt.sqlite'),
+    content: path.join(ROOT, 'content'),
+    uploads: path.join(ROOT, 'content', 'uploads'),
     dist: path.join(ROOT, 'dist'),
     public: path.join(ROOT, 'public'),
-    uploads: path.join(ROOT, 'uploads'),
     admin: path.join(ROOT, 'admin'),
   },
 };
 
-if (!config.tiinyDomain) config.tiinyDomain = new URL(config.siteUrl).host;
+// Where the quote form submits. Without a Google web app the form has nowhere to go,
+// so it falls back to the contact page (visitors can still call).
+config.leadEndpoint = config.leadsWebAppUrl;
 
 // Brand facts used across every generated page. Change the phone number here only.
 export const brand = {

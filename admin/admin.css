@@ -67,7 +67,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--blue); bord
 .kv dt { color: var(--muted); }
 .kv dd { margin: 0; }
 .links { columns: 2; }
-.steps-list { padding-left: 1.2rem; line-height: 1.7; }
+
 
 /* tables */
 .table-wrap { overflow-x: auto; background: var(--card); border: 1px solid var(--line); border-radius: 12px; }
@@ -125,3 +125,12 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--blue); bord
   .kv { grid-template-columns: 1fr; }
   .head__actions input[type=search] { width: 100%; }
 }
+
+/* live admin additions */
+.check { flex-direction: row; align-items: center; gap: 8px; font-weight: 400; }
+.check input { width: auto; }
+.small { font-size: .82rem; }
+.deploy-pill { display: inline-block; font-size: .8rem; padding: 4px 10px; border-radius: 999px; font-weight: 700; }
+.deploy-pill.is-ok { background: #123d2c; color: #8ff0c2; }
+.deploy-pill.is-busy { background: #3d3212; color: #ffd66b; }
+.deploy-pill.is-bad { background: #4a1418; color: #ffb3b9; }

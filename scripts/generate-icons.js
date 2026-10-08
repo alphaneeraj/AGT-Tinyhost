@@ -49,7 +49,7 @@ const og = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" vi
   <circle cx="1130" cy="600" r="180" fill="#e63946" opacity="0.12"/>
   <g transform="translate(80 80) scale(1.6)">${plane}</g>
   <text x="200" y="138" font-family="Helvetica Neue, Helvetica, Arial" font-size="40" font-weight="700" fill="#ffffff">${brand.name}</text>
-  <text x="80" y="300" font-family="Helvetica Neue, Helvetica, Arial" font-size="72" font-weight="800" fill="#ffffff">Cheap Group Flights</text>
+  <text x="80" y="300" font-family="Helvetica Neue, Helvetica, Arial" font-size="72" font-weight="800" fill="#ffffff">Group Flights for 10+</text>
   <text x="80" y="384" font-family="Helvetica Neue, Helvetica, Arial" font-size="40" fill="#dbe6fb">10+ travellers · 200+ airlines · Book now, pay later</text>
   <rect x="80" y="450" width="560" height="96" rx="48" fill="#e63946"/>
   <text x="360" y="512" text-anchor="middle" font-family="Helvetica Neue, Helvetica, Arial" font-size="42" font-weight="800" fill="#ffffff">Call ${brand.phone}</text>

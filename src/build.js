@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { brand, config } from './config.js';
-import { posts } from './db.js';
+import { brand, config, ROOT } from './config.js';
+import { publishedPosts } from './content.js';
 import { abs, esc, stripHtml, truncate } from './templates/layout.js';
 import {
   AIRLINES, DESTINATIONS, GROUP_FAQS, HOME_FAQS,
@@ -13,7 +13,7 @@ const PER_PAGE = 12;
 
 // Static pages that appear in the sitemap and llms files: [path, title, summary, priority, changefreq]
 const STATIC_PAGES = [
-  ['/', 'Home – Cheap Group Flights', 'Discounted group airfare for 10+ travellers on 200+ airlines.', '1.0', 'daily'],
+  ['/', 'Home – Group Flights for 10+ Travellers', 'Discounted group airfare for 10+ travellers on 200+ airlines.', '1.0', 'daily'],
   ['/group-travel/', 'Group Travel Booking Services', 'Group air travel for teams, schools, churches, weddings and corporate events.', '0.9', 'monthly'],
   ['/flights/', 'Group Flight Booking Pages', 'Airline and route group flight guides.', '0.8', 'daily'],
   ['/blog/', 'Group Travel Blog', 'Guides and tips for organizing group trips by air.', '0.8', 'daily'],
@@ -23,11 +23,18 @@ const STATIC_PAGES = [
   ['/disclaimer/', 'Disclaimer', 'Trademark and fare disclaimer.', '0.2', 'yearly'],
 ];
 
+// Templates use root-relative links ("/blog/"). On GitHub Pages the site lives under a project
+// path, so every internal href/src/action gets the base path prefixed here, in one place.
+export function withBase(html) {
+  if (!config.basePath) return html;
+  return html.replace(/(\s(?:href|src|action|poster)=")\/(?!\/)/g, `$1${config.basePath}/`);
+}
+
 function write(dist, urlPath, html) {
   const rel = urlPath.endsWith('/') ? urlPath + 'index.html' : urlPath;
   const file = path.join(dist, rel);
   fs.mkdirSync(path.dirname(file), { recursive: true });
-  fs.writeFileSync(file, html);
+  fs.writeFileSync(file, withBase(html));
 }
 
 function copyDir(src, dest) {
@@ -64,7 +71,7 @@ function sitemapXml(entries) {
   </url>`)
     .join('\n');
   return `<?xml version="1.0" encoding="UTF-8"?>
-<?xml-stylesheet type="text/xsl" href="/sitemap.xsl"?>
+<?xml-stylesheet type="text/xsl" href="${config.basePath}/sitemap.xsl"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
 ${urls}
 </urlset>
@@ -75,8 +82,9 @@ function robotsTxt() {
   return `# ${brand.name} – ${config.siteUrl}
 User-agent: *
 Allow: /
-Disallow: /thank-you/
-Disallow: /form-error/
+Disallow: ${config.basePath}/thank-you/
+Disallow: ${config.basePath}/form-error/
+Disallow: ${config.basePath}/admin/
 
 # AI / LLM crawlers are welcome – see /llms.txt
 User-agent: GPTBot
@@ -173,7 +181,7 @@ function llmsFullTxt(blogs, flights) {
 > Official promotional website and blog for ${brand.mainSite}. Group flight bookings for 10+ travellers on 200+ airlines. Call ${brand.phone} (24/7) or email ${brand.email}.
 Generated: ${new Date().toISOString()}`;
 
-  out += section('Home – Cheap Group Flights', abs('/'), `
+  out += section('Home – Group Flights for 10+ Travellers', abs('/'), `
 ${brand.name} negotiates discounted group airfares for teams, schools, weddings, churches, tours and corporate events. One specialist, one contract, one price for everyone.
 
 Benefits: discounted group fares; book now, pay later with staged deposits; one point of contact; 200+ airlines worldwide; business class and private jet charter.
@@ -218,18 +226,35 @@ function manifest() {
     name: brand.name,
     short_name: brand.shortName,
     description: `${brand.tagline} – discounted group flights. Call ${brand.phone}.`,
-    start_url: '/',
-    scope: '/',
+    start_url: `${config.basePath}/`,
+    scope: `${config.basePath}/`,
     display: 'standalone',
     background_color: '#ffffff',
     theme_color: brand.themeColor,
     icons: [
-      { src: '/assets/icon-192.png', sizes: '192x192', type: 'image/png' },
-      { src: '/assets/icon-512.png', sizes: '512x512', type: 'image/png' },
-      { src: '/assets/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
-      { src: '/favicon.svg', sizes: 'any', type: 'image/svg+xml' },
+      { src: `${config.basePath}/assets/icon-192.png`, sizes: '192x192', type: 'image/png' },
+      { src: `${config.basePath}/assets/icon-512.png`, sizes: '512x512', type: 'image/png' },
+      { src: `${config.basePath}/assets/icon-512.png`, sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+      { src: `${config.basePath}/favicon.svg`, sizes: 'any', type: 'image/svg+xml' },
     ],
   }, null, 2);
+}
+
+// The live admin is a static page too: copy it, its Quill editor and a generated settings file.
+function buildAdmin(dist) {
+  const out = path.join(dist, 'admin');
+  copyDir(config.paths.admin, out);
+  const quill = path.join(ROOT, 'node_modules', 'quill', 'dist');
+  fs.mkdirSync(path.join(out, 'vendor'), { recursive: true });
+  for (const f of ['quill.js', 'quill.snow.css']) fs.copyFileSync(path.join(quill, f), path.join(out, 'vendor', f));
+  const settings = {
+    siteUrl: config.siteUrl,
+    basePath: config.basePath,
+    repo: config.repo,
+    branch: config.branch,
+    leadsWebAppUrl: config.leadsWebAppUrl,
+  };
+  fs.writeFileSync(path.join(out, 'settings.js'), `window.AGT_SETTINGS = ${JSON.stringify(settings, null, 2)};\n`);
 }
 
 /** Regenerates the entire static site into dist/. Returns a summary. */
@@ -240,8 +265,8 @@ export function buildSite() {
   fs.rmSync(tmp, { recursive: true, force: true });
   fs.mkdirSync(tmp, { recursive: true });
 
-  const blogs = posts.published('blog');
-  const flights = posts.published('flight');
+  const blogs = publishedPosts('blog');
+  const flights = publishedPosts('flight');
   const sitemap = [];
   const addUrl = (p, lastmod, priority, changefreq, image) => sitemap.push({ path: p, lastmod, priority, changefreq, image });
   const newest = (list) => list.reduce((m, p) => (p.updated_at > m ? p.updated_at : m), '') || new Date().toISOString();
@@ -249,6 +274,9 @@ export function buildSite() {
 
   copyDir(config.paths.public, tmp);
   copyDir(config.paths.uploads, path.join(tmp, 'uploads'));
+  buildAdmin(tmp);
+  // Tell GitHub Pages not to run Jekyll over the output.
+  fs.writeFileSync(path.join(tmp, '.nojekyll'), '');
 
   write(tmp, '/', homePage({ blogs, flights }));
   write(tmp, '/group-travel/', groupTravelPage());

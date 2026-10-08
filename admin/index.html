@@ -5,39 +5,45 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="robots" content="noindex, nofollow" />
 <title>AGT Admin</title>
-<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-<link rel="stylesheet" href="/admin/vendor/quill/quill.snow.css" />
-<link rel="stylesheet" href="/admin/admin.css" />
+<link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+<link rel="stylesheet" href="vendor/quill.snow.css" />
+<link rel="stylesheet" href="admin.css" />
 </head>
 <body>
 
 <!-- Login -->
 <section id="login-view" class="login" hidden>
   <form id="login-form" class="login__box">
-    <img src="/favicon.svg" width="48" height="48" alt="" />
+    <img src="../favicon.svg" width="48" height="48" alt="" />
     <h1>AGT Admin</h1>
     <p class="muted">Blog, flight pages &amp; leads</p>
-    <label>Username<input name="username" autocomplete="username" required /></label>
-    <label>Password<input name="password" type="password" autocomplete="current-password" required /></label>
+    <label>GitHub access token
+      <input name="token" type="password" autocomplete="off" required placeholder="github_pat_…" />
+    </label>
+    <label>Leads key <span class="muted">(the SECRET from Code.gs)</span>
+      <input name="leadsKey" type="password" autocomplete="off" />
+    </label>
+    <label class="check"><input type="checkbox" name="remember" checked /> Keep me signed in on this device</label>
     <button class="btn btn--primary" type="submit">Sign in</button>
     <p id="login-error" class="error" role="alert"></p>
+    <p class="muted small">Need a token? See the README section <em>“Live admin sign-in”</em>. Keys are stored only in this browser.</p>
   </form>
 </section>
 
 <!-- App -->
 <div id="app-view" class="app" hidden>
   <aside class="side">
-    <a class="side__brand" href="#dashboard"><img src="/favicon.svg" width="30" height="30" alt="" /> AGT Admin</a>
+    <a class="side__brand" href="#dashboard"><img src="../favicon.svg" width="30" height="30" alt="" /> AGT Admin</a>
     <nav>
       <a href="#dashboard" data-nav="dashboard">Dashboard</a>
       <a href="#leads" data-nav="leads">Leads <span id="new-leads-badge" class="badge" hidden></span></a>
       <a href="#blog" data-nav="blog">Blog posts</a>
       <a href="#flight" data-nav="flight">Flight pages</a>
-      <a href="#publish" data-nav="publish">Build &amp; publish</a>
+      <a href="#site" data-nav="site">Site &amp; deploys</a>
     </nav>
     <div class="side__foot">
-      <a href="/" id="preview-link">Local preview ↗</a>
-      <a href="#" id="live-link">Live site ↗</a>
+      <span id="deploy-pill" class="deploy-pill" hidden></span>
+      <a href="../" id="live-link" target="_blank" rel="noopener">View live site ↗</a>
       <button id="logout" class="link">Sign out</button>
     </div>
   </aside>
@@ -50,10 +56,6 @@
       <div class="panel">
         <h2>Latest leads</h2>
         <div id="dash-leads"></div>
-      </div>
-      <div class="panel">
-        <h2>Site status</h2>
-        <dl class="kv" id="site-status"></dl>
       </div>
     </section>
 
@@ -68,9 +70,11 @@
             <option value="new">New</option><option value="contacted">Contacted</option><option value="quoted">Quoted</option>
             <option value="booked">Booked</option><option value="closed">Closed</option><option value="spam">Spam</option>
           </select>
-          <a class="btn" id="lead-csv" href="/admin/api/leads.csv">Export CSV</a>
+          <button class="btn" id="lead-refresh">Refresh</button>
+          <button class="btn" id="lead-csv">Export CSV</button>
         </div>
       </div>
+      <p id="leads-msg" class="msg"></p>
       <div id="lead-list"></div>
     </section>
 
@@ -92,7 +96,7 @@
         <div class="head">
           <h1 id="editor-title">New post</h1>
           <div class="head__actions">
-            <a class="btn" id="editor-view" href="#" hidden>View page ↗</a>
+            <a class="btn" id="editor-view" href="#" target="_blank" rel="noopener" hidden>View page ↗</a>
             <button type="button" class="btn" id="editor-back">← Back</button>
             <button type="submit" class="btn" data-status="draft">Save draft</button>
             <button type="submit" class="btn btn--primary" data-status="published">Publish</button>
@@ -121,8 +125,8 @@
           <div class="editor__side">
             <div class="panel">
               <h3>Publishing</h3>
-              <p>Status: <strong id="status-label">Draft</strong></p>
-              <label>Publish date<input name="published_at" type="datetime-local" /></label>
+              <p>Status: <strong id="status-label">draft</strong></p>
+              <label>Publish date <span class="muted">(future date = scheduled)</span><input name="published_at" type="datetime-local" /></label>
               <label data-only="blog">Author<input name="author" maxlength="120" placeholder="Airlines Group Travel" /></label>
               <label>Tags <span class="muted">(comma separated)</span><input name="tags" maxlength="300" /></label>
             </div>
@@ -138,7 +142,7 @@
             <div class="panel">
               <h3>Cover image</h3>
               <div id="cover-preview" class="cover-preview"></div>
-              <label>Image URL<input name="cover_image" maxlength="500" placeholder="/uploads/… or https://…" /></label>
+              <label>Image path or URL<input name="cover_image" maxlength="500" placeholder="/uploads/… or https://…" /></label>
               <label class="btn btn--file">Upload image<input type="file" id="cover-file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif" hidden /></label>
               <label>Alt text<input name="cover_alt" maxlength="200" /></label>
             </div>
@@ -159,34 +163,26 @@
       </form>
     </section>
 
-    <!-- Build & publish -->
-    <section data-view="publish" hidden>
-      <h1>Build &amp; publish</h1>
+    <!-- Site & deploys -->
+    <section data-view="site" hidden>
+      <h1>Site &amp; deploys</h1>
       <div class="panel">
-        <p>Every save rebuilds the static site automatically (pages, <code>sitemap.xml</code>, <code>feed.xml</code>, <code>llms.txt</code>, <code>llms-full.txt</code>, <code>robots.txt</code>).</p>
-        <h3>Free plan: upload the ZIP</h3>
-        <ol class="steps-list">
-          <li>Click <strong>Download site ZIP</strong>.</li>
-          <li>Open <a href="https://tiiny.host/manage" target="_blank" rel="noopener">tiiny.host/manage</a>. First time: <strong>Upload file</strong>, pick the ZIP and set the link name to the subdomain in your <code>SITE_URL</code>. After that: use <strong>Update</strong> on your project and pick the new ZIP (free plan: delete the old project and upload again with the same name).</li>
-        </ol>
-        <p id="zip-size" class="muted"></p>
-        <div class="row">
-          <a class="btn btn--primary" id="btn-zip" href="/admin/api/site.zip">Download site ZIP</a>
-          <button class="btn" id="btn-build">Rebuild now</button>
-          <button class="btn" id="btn-publish">Publish via tiiny.host API (Solo plan+)</button>
-        </div>
-        <p id="publish-msg" class="msg" role="status"></p>
-        <dl class="kv" id="publish-status"></dl>
+        <p>Every save commits to GitHub and the site rebuilds automatically (pages, <code>sitemap.xml</code>, <code>feed.xml</code>, <code>llms.txt</code>, <code>llms-full.txt</code>, <code>robots.txt</code>). It is usually live about a minute later.</p>
+        <dl class="kv" id="site-status"></dl>
+      </div>
+      <div class="panel">
+        <h2>Recent deploys</h2>
+        <div id="deploys"></div>
       </div>
       <div class="panel">
         <h2>Generated files</h2>
         <ul class="links">
-          <li><a href="/sitemap.xml">sitemap.xml</a></li>
-          <li><a href="/robots.txt">robots.txt</a></li>
-          <li><a href="/llms.txt">llms.txt</a></li>
-          <li><a href="/llms-full.txt">llms-full.txt</a></li>
-          <li><a href="/feed.xml">feed.xml (RSS)</a></li>
-          <li><a href="/site.webmanifest">site.webmanifest</a></li>
+          <li><a href="../sitemap.xml" target="_blank" rel="noopener">sitemap.xml</a></li>
+          <li><a href="../robots.txt" target="_blank" rel="noopener">robots.txt</a></li>
+          <li><a href="../llms.txt" target="_blank" rel="noopener">llms.txt</a></li>
+          <li><a href="../llms-full.txt" target="_blank" rel="noopener">llms-full.txt</a></li>
+          <li><a href="../feed.xml" target="_blank" rel="noopener">feed.xml (RSS)</a></li>
+          <li><a href="../site.webmanifest" target="_blank" rel="noopener">site.webmanifest</a></li>
         </ul>
       </div>
     </section>
@@ -194,7 +190,8 @@
 </div>
 
 <div id="toast" class="toast" role="status" hidden></div>
-<script src="/admin/vendor/quill/quill.js"></script>
-<script src="/admin/admin.js"></script>
+<script src="settings.js"></script>
+<script src="vendor/quill.js"></script>
+<script src="admin.js"></script>
 </body>
 </html>

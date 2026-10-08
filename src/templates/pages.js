@@ -21,8 +21,7 @@ const AIRLINES = [
 ];
 
 const DESTINATIONS = [
-  ['Paris', 'paris'], ['London', 'london'], ['Las Vegas', 'las-vegas'], ['Dubai', 'dubai'],
-  ['Tokyo', 'tokyo'], ['Singapore', 'singapore'], ['Miami', 'miami'], ['Tel Aviv', 'tel-aviv'],
+  ['Paris'], ['London'], ['Las Vegas'], ['Dubai'], ['Tokyo'], ['Singapore'], ['Miami'], ['Tel Aviv'],
 ];
 
 const HOME_FAQS = [
@@ -31,7 +30,7 @@ const HOME_FAQS = [
     a: 'Most airlines treat 10 or more passengers travelling together on the same itinerary as a group. Airlines Group Travel can also help smaller parties of 6–9 find the best combined fares.',
   },
   {
-    q: 'Are group flights cheaper than booking individual tickets?',
+    q: 'Do group flights cost less than booking individual tickets?',
     a: 'Often, yes. Group fares are negotiated directly with the airline, so the price is usually lower than the published fare and is locked for the whole party, even as seats sell out.',
   },
   {
@@ -100,7 +99,7 @@ export function homePage({ blogs, flights }) {
   <div class="wrap hero__inner">
     <div class="hero__copy">
       <p class="eyebrow">${esc(brand.tagline)}</p>
-      <h1>Cheap Group Flights for 10+ Travellers on 200+ Airlines</h1>
+      <h1>Discounted Group Flights for 10+ Travellers on 200+ Airlines</h1>
       <p class="hero__lead">Airlines Group Travel negotiates discounted group airfares for teams, schools, weddings, churches, tours and corporate events. One specialist, one contract, one great price for everyone.</p>
       <ul class="ticks">
         <li>Locked group fares and flexible name changes</li>
@@ -134,7 +133,7 @@ export function homePage({ blogs, flights }) {
     </ul>
     <h2 class="section__title">Top group destinations</h2>
     <ul class="pills">
-      ${DESTINATIONS.map(([n, s]) => `<li><a href="${brand.mainSite}/cheap-group-flights-to/${s}" rel="noopener">Group flights to ${esc(n)}</a></li>`).join('')}
+      ${DESTINATIONS.map(([n]) => `<li><a href="/contact/">Group flights to ${esc(n)}</a></li>`).join('')}
     </ul>
   </div>
 </section>
@@ -164,7 +163,7 @@ ${flights.length ? `
 
   return page({
     path: '/',
-    title: `Cheap Group Flights & Airline Group Booking | ${brand.name}`,
+    title: `Group Flights & Airline Group Booking for 10+ | ${brand.name}`,
     description: `Book discounted group flights for 10+ travellers on 200+ airlines. Locked fares, pay-later deposits and 24/7 experts. Call ${brand.phone} for a free group quote.`,
     body,
     schema: [faqSchema(HOME_FAQS)],

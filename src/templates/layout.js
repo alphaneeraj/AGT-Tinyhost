@@ -236,7 +236,7 @@ export function breadcrumbs(crumbs) {
 
 export function leadForm({ heading = 'Get a free group fare quote', compact = false, source = '/' } = {}) {
   return `
-<form class="lead-form${compact ? ' lead-form--compact' : ''}" method="POST" action="${esc(config.leadEndpoint)}" data-lead-form>
+<form class="lead-form${compact ? ' lead-form--compact' : ''}" method="POST" action="${esc(config.leadEndpoint || '/contact/')}" data-lead-form data-endpoint="${esc(config.leadEndpoint)}" data-thanks="${config.basePath}/thank-you/">
   <h2 class="lead-form__title">${esc(heading)}</h2>
   <p class="lead-form__sub">10+ travellers? Tell us your trip and a specialist will call you back. Prefer to talk now? ${phoneLink()}</p>
   <div class="lead-form__grid">
