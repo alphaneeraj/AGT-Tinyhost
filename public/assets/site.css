@@ -74,6 +74,7 @@ h2 { font-size: clamp(1.35rem, 2.6vw, 1.8rem); }
 .ticks li::before { content: "✓"; position: absolute; left: 0; top: 0; width: 22px; height: 22px; border-radius: 50%; background: var(--red); color: #fff; font-size: .8rem; display: grid; place-items: center; font-weight: 700; }
 .hero__ctas { display: flex; flex-wrap: wrap; gap: 12px; }
 .hero .btn--ghost { color: #fff; }
+.hero .lead-form .btn--ghost { color: var(--blue); }
 
 /* sections */
 .section { padding: 48px 0; }

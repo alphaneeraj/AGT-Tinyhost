@@ -108,7 +108,12 @@ npm install
 npm run preview      # http://localhost:3000/AGT-Tinyhost/
 ```
 
-`npm run zip` writes `agt-site.zip` (index.html at the root). Use it if you also want to keep a copy on tiiny.host's free plan by uploading the ZIP by hand.
+### Optional copy on tiiny.host (free plan)
+
+`npm run zip` writes `agt-site.zip`, a **brochure-only** copy for tiiny.host. tiiny.host's free-plan scanner rejects uploads with
+login pages, data-collecting forms or airline-brand lists (they look like phishing or fake airline support). So this copy has
+**no admin, no forms and no airline list**. Its quote buttons link to the full GitHub Pages site, and its canonical URLs point there.
+Upload it at https://tiiny.host/manage. It does not update by itself; re-run `npm run zip` and re-upload after new posts.
 
 ## Project layout
 

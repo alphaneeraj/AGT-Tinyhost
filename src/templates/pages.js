@@ -1,4 +1,4 @@
-import { brand } from '../config.js';
+import { brand, config } from '../config.js';
 import {
   abs, esc, faqBlock, faqSchema, formatDate, leadForm, page, phoneLink, readingMinutes, stripHtml, truncate, orgId,
 } from './layout.js';
@@ -127,10 +127,10 @@ export function homePage({ blogs, flights }) {
 
 <section class="section section--alt">
   <div class="wrap">
-    <h2 class="section__title">Group bookings on popular airlines</h2>
+    ${config.brochure ? '' : `<h2 class="section__title">Group bookings on popular airlines</h2>
     <ul class="pills">
       ${AIRLINES.map(([n, p]) => `<li><a href="${brand.mainSite}/${p}" rel="noopener">${esc(n)} group booking</a></li>`).join('')}
-    </ul>
+    </ul>`}
     <h2 class="section__title">Top group destinations</h2>
     <ul class="pills">
       ${DESTINATIONS.map(([n]) => `<li><a href="/contact/">Group flights to ${esc(n)}</a></li>`).join('')}

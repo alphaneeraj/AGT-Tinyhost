@@ -274,7 +274,7 @@ export function buildSite() {
 
   copyDir(config.paths.public, tmp);
   copyDir(config.paths.uploads, path.join(tmp, 'uploads'));
-  buildAdmin(tmp);
+  if (!config.brochure) buildAdmin(tmp);
   // Tell GitHub Pages not to run Jekyll over the output.
   fs.writeFileSync(path.join(tmp, '.nojekyll'), '');
 
@@ -284,8 +284,10 @@ export function buildSite() {
   write(tmp, '/contact/', contactPage());
   write(tmp, '/privacy-policy/', legalPage('privacy'));
   write(tmp, '/disclaimer/', legalPage('disclaimer'));
-  write(tmp, '/thank-you/', thankYouPage());
-  write(tmp, '/form-error/', formErrorPage());
+  if (!config.brochure) {
+    write(tmp, '/thank-you/', thankYouPage());
+    write(tmp, '/form-error/', formErrorPage());
+  }
   write(tmp, '/404.html', notFoundPage());
 
   for (const [p, , , priority, changefreq] of STATIC_PAGES) {

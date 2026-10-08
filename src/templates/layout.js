@@ -235,6 +235,17 @@ export function breadcrumbs(crumbs) {
 }
 
 export function leadForm({ heading = 'Get a free group fare quote', compact = false, source = '/' } = {}) {
+  if (config.brochure) {
+    // Brochure build: no data collection on this host – send visitors to the phone line or the full site's form.
+    return `
+<div class="lead-form${compact ? ' lead-form--compact' : ''}">
+  <h2 class="lead-form__title">${esc(heading)}</h2>
+  <p class="lead-form__sub">Travelling with 10 or more people? Speak with a group travel specialist, 24/7.</p>
+  <p>${phoneLink(`Call ${brand.phone}`, 'btn btn--primary btn--lg')}</p>
+  <p><a class="btn btn--ghost btn--lg" href="${esc(config.siteUrl)}/contact/">Request a quote online</a></p>
+  <p class="lead-form__sub">Or email <a href="mailto:${brand.email}">${brand.email}</a></p>
+</div>`;
+  }
   return `
 <form class="lead-form${compact ? ' lead-form--compact' : ''}" method="POST" action="${esc(config.leadEndpoint || '/contact/')}" data-lead-form data-endpoint="${esc(config.leadEndpoint)}" data-thanks="${config.basePath}/thank-you/">
   <h2 class="lead-form__title">${esc(heading)}</h2>

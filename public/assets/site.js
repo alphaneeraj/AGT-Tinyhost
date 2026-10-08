@@ -9,6 +9,9 @@
     });
   }
 
+  var forms = document.querySelectorAll('[data-lead-form]');
+  if (!forms.length) return; // brochure pages have no form, so nothing else to do
+
   // Remember first-touch UTM parameters for the lead form.
   var utm = '';
   try {
@@ -21,7 +24,7 @@
   } catch (e) { /* storage blocked */ }
 
   var today = new Date().toISOString().slice(0, 10);
-  document.querySelectorAll('[data-lead-form]').forEach(function (form) {
+  forms.forEach(function (form) {
     form.elements.ts.value = String(Date.now());
     form.elements.utm.value = utm.slice(0, 500);
     form.elements.source_page.value = location.pathname;

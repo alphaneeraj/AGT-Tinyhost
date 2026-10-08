@@ -15,7 +15,10 @@ export const config = {
   // Public URL of the site, including the project path on GitHub Pages.
   siteUrl,
   // Path prefix for every internal link, e.g. "/AGT-Tinyhost" ("" when the site is at a domain root).
-  basePath: stripSlash(new URL(siteUrl).pathname),
+  // BASE_PATH overrides it for mirrors served from a domain root (e.g. the tiiny.host copy).
+  basePath: process.env.BASE_PATH !== undefined ? stripSlash(process.env.BASE_PATH) : stripSlash(new URL(siteUrl).pathname),
+  // Brochure-only build (no admin, no forms, no data collection) for hosts with strict free-plan scanning.
+  brochure: env('BROCHURE', 'false') === 'true',
   // GitHub repo the live admin saves posts into.
   repo: env('GITHUB_REPOSITORY', file.repo),
   branch: file.branch || 'main',
