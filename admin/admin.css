@@ -67,6 +67,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--blue); bord
 .kv dt { color: var(--muted); }
 .kv dd { margin: 0; }
 .links { columns: 2; }
+.steps-list { padding-left: 1.2rem; line-height: 1.7; }
 
 /* tables */
 .table-wrap { overflow-x: auto; background: var(--card); border: 1px solid var(--line); border-radius: 12px; }

@@ -1,10 +1,10 @@
 # AGT-Tinyhost
 
 Promotional website for **[AirlinesGroupTravel.com](https://www.airlinesgrouptravel.com)**, hosted for free on
-**[srht.site](https://srht.site)** (SourceHut Pages), with a small admin portal for publishing
+**[tiiny.host](https://tiiny.host)**, with a small admin portal for publishing
 **blog posts** and **flight pages** and for managing **leads** from the quote form.
 
-- Live site: `https://airlinesgrouptravel.srht.site` (set by `SITE_URL`)
+- Live site: `https://airlinesgrouptravel.tiiny.site` (set by `SITE_URL`)
 - Phone used across the whole site: **+1-888-609-1015** (change it in `src/config.js` → `brand.phone`, then `npm run icons`)
 
 ---
@@ -16,15 +16,15 @@ Promotional website for **[AirlinesGroupTravel.com](https://www.airlinesgrouptra
  │  /admin  ── rich-text editor (Quill) ──► SQLite (data/agt.sqlite) ──► static generator ──► dist/ │
  │  /api/leads  ◄── quote form POSTs from the live site; leads appear in /admin → Leads          │
  └──────────────────────────────────────────────┬──────────────────────────────────────────────┘
-                                               │  "Publish to srht.site" (pages.sr.ht API)
+                                               │  "Download site ZIP" → Upload at tiiny.host/manage
+                                               │  (or one-click API publish on the Solo plan+)
                                                ▼
-                     https://airlinesgrouptravel.srht.site   (static HTML only)
+                     https://airlinesgrouptravel.tiiny.site   (static HTML only)
 ```
 
-srht.site only serves static files and blocks third-party scripts and cross-origin `fetch`.
-So:
+tiiny.host only serves static files (no PHP, no database). So:
 
-1. Every page is pre-rendered HTML with self-hosted CSS/JS (no CDNs, no trackers), which matches the srht.site CSP.
+1. Every page is pre-rendered HTML with self-hosted CSS/JS (no CDNs, no trackers).
 2. The admin server stores content and rebuilds `dist/` on **every save or delete**, including the sitemap.
 3. The quote form is a plain HTML `<form method="POST">` that submits straight to this server's `/api/leads`.
    The server saves the lead and redirects the visitor back to `/thank-you/` on the live site.
@@ -66,10 +66,10 @@ npm start
 
 | Variable | Purpose |
 | --- | --- |
-| `SITE_URL` | Public URL of the static site, e.g. `https://airlinesgrouptravel.srht.site`. Used in canonical URLs, sitemap, OG tags. |
-| `SRHT_DOMAIN` | pages.sr.ht domain to publish to (defaults to the host of `SITE_URL`). |
-| `SRHT_TOKEN` | SourceHut personal access token with scope **`pages.sr.ht/PAGES:RW`** (create one at https://meta.sr.ht/oauth2). |
-| `AUTO_PUBLISH` | `true` publishes to srht.site automatically after each save or delete. |
+| `SITE_URL` | Public URL of the static site, e.g. `https://airlinesgrouptravel.tiiny.site`. Must match your tiiny.host link name. |
+| `TIINY_DOMAIN` | tiiny.host site to update through the API (defaults to the host of `SITE_URL`). |
+| `TIINY_API_KEY` | tiiny.host API key (Solo plan+). Leave empty on the free plan. |
+| `AUTO_PUBLISH` | `true` publishes to tiiny.host automatically after each save or delete (needs the API key). |
 | `LEAD_ENDPOINT` | **Public HTTPS** URL of this server's `/api/leads`. It is baked into the form on every page, so rebuild and publish after changing it. |
 | `ALLOWED_ORIGINS` | Extra origins allowed to post leads (the `SITE_URL` origin is always allowed). |
 | `ADMIN_USER` / `ADMIN_PASSWORD` | Admin login. |
@@ -77,24 +77,29 @@ npm start
 | `TRUST_PROXY` | Set to `1` behind nginx/Caddy/Render/Railway so rate limits see the real visitor IP. |
 | `PORT` | Admin server port (default 3000). |
 
-## Publishing to srht.site
+## Publishing to tiiny.host
 
-1. Create a SourceHut account named **`airlinesgrouptravel`**. Your site domain is then `airlinesgrouptravel.srht.site`.
-2. Create an OAuth2 personal access token at https://meta.sr.ht/oauth2 with the `pages.sr.ht/PAGES:RW` grant and put it in `SRHT_TOKEN`.
-3. Click **Admin → Build & publish → Publish to srht.site**, or run:
+**Free plan (what you have now: 1 project, 3 MB, tiiny banner)**
 
-```bash
-npm run publish:srht
-```
+1. Admin → **Build & publish** → **Download site ZIP** (or run `npm run zip`, which writes `agt-site.zip`).
+2. Go to https://tiiny.host/manage → **Upload file** → choose the ZIP. Set the link name to `airlinesgrouptravel`
+   so the site lives at `https://airlinesgrouptravel.tiiny.site`.
+   If that name is taken, pick another one and set `SITE_URL` in `.env` to match. Canonical URLs, the sitemap and OG tags all use it. Then download and upload the ZIP again.
+3. After adding posts, download a fresh ZIP and replace the project. On the free plan that means deleting the project and uploading again under the same link name.
 
-Publishing uploads a tarball of `dist/` through the pages.sr.ht GraphQL API (the same call `hut pages publish` makes). It also sets
-`404.html` as the not-found page and adds cache headers. If that call fails, it falls back to the REST `/publish` endpoint.
+The admin page shows the current ZIP size and warns you when it goes over the 3 MB free limit. Large blog images are what usually push it over, so compress them before uploading.
 
-> Using a custom domain (e.g. `go.airlinesgrouptravel.com`) later? Point a CNAME to `pages.sr.ht`, then change `SITE_URL` and `SRHT_DOMAIN`.
+**Solo plan or higher (API, custom domain, custom 404, no banner)**
+
+1. tiiny.host → Manage Account → create an **API key** and put it in `.env` as `TIINY_API_KEY`.
+2. Click **Publish via tiiny.host API**, or run `npm run publish:tiiny`. The site is updated in place (`PUT /v1/upload`) and created on the first publish.
+3. Optional: `AUTO_PUBLISH=true` publishes after every save.
+
+> Custom domain later (e.g. `go.airlinesgrouptravel.com`)? Connect it in tiiny.host, then change `SITE_URL` and `TIINY_DOMAIN`.
 
 ## Day-to-day workflow
 
-- **Write a blog post:** Admin → Blog posts → **New** → write → **Publish**. The page, blog index, homepage cards, related posts, sitemap, RSS and llms files all regenerate. With `AUTO_PUBLISH=true` it also goes live; otherwise click *Publish to srht.site*.
+- **Write a blog post:** Admin → Blog posts → **New** → write → **Publish**. The page, blog index, homepage cards, related posts, sitemap, RSS and llms files all regenerate. Then download the ZIP and upload it to tiiny.host (or publish via the API on the Solo plan).
 - **Add a flight page:** Admin → Flight pages → **New**. Fill in airline, route and fare. The page appears at `/flights/<slug>/`.
 - **Unpublish:** open the post and click **Save draft**. It disappears from the site and sitemap on the next build.
 - **Leads:** Admin → Leads. Change the status as you work each lead, add notes, or export a CSV.
@@ -128,7 +133,8 @@ server.js               Express app: admin API, lead endpoint, uploads, local pr
 src/config.js           Env config + brand facts (phone, address, social links)
 src/db.js               SQLite schema and queries (posts, leads)
 src/build.js            Static site generator, sitemap, robots, llms, RSS, manifest
-src/publish.js          Upload to pages.sr.ht
+src/publish.js          Site ZIP + tiiny.host API publish
+src/zip.js              Dependency-free ZIP writer
 src/templates/          HTML layout, SEO head, schema, page templates
 public/                 Static assets copied into every build (CSS, JS, icons)
 admin/                  Admin portal (HTML/CSS/JS, Quill served from node_modules)
@@ -142,5 +148,6 @@ scripts/                build, publish and icon-generation CLIs
 | `npm start` | Run admin server and preview on `PORT` |
 | `npm run dev` | Same, restarting on file changes |
 | `npm run build` | Regenerate `dist/` from the database |
-| `npm run publish:srht` | Build and publish to srht.site |
+| `npm run zip` | Build and write `agt-site.zip` for manual upload |
+| `npm run publish:tiiny` | Build and publish through the tiiny.host API (Solo plan+) |
 | `npm run icons` | Re-render favicons and the OG image from `public/favicon.svg` (needed after changing the phone number) |

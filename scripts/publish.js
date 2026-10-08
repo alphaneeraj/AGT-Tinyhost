@@ -1,4 +1,4 @@
-// Builds and uploads the site to srht.site: npm run publish:srht
+// Builds and uploads the site to tiiny.host via its API (Solo plan+): npm run publish:tiiny
 import { buildSite } from '../src/build.js';
 import { publishSite } from '../src/publish.js';
 

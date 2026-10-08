@@ -8,11 +8,12 @@ const stripSlash = (url) => url.replace(/\/+$/, '');
 
 export const config = {
   port: Number(env('PORT', '3000')),
-  // Public URL of the static site on srht.site (used for canonical URLs, sitemap, OG tags).
-  siteUrl: stripSlash(env('SITE_URL', 'https://airlinesgrouptravel.srht.site')),
-  // Domain the site is published to on pages.sr.ht (usually the host part of SITE_URL).
-  srhtDomain: env('SRHT_DOMAIN', ''),
-  srhtToken: env('SRHT_TOKEN', ''),
+  // Public URL of the static site on tiiny.host (used for canonical URLs, sitemap, OG tags).
+  siteUrl: stripSlash(env('SITE_URL', 'https://airlinesgrouptravel.tiiny.site')),
+  // tiiny.host site domain to update via the API (usually the host part of SITE_URL).
+  tiinyDomain: env('TIINY_DOMAIN', ''),
+  // API key from tiiny.host → Manage Account (API access needs the Solo plan or higher).
+  tiinyApiKey: env('TIINY_API_KEY', ''),
   autoPublish: env('AUTO_PUBLISH', 'false') === 'true',
   // Public HTTPS URL of THIS server's lead endpoint. The static form posts here.
   leadEndpoint: env('LEAD_ENDPOINT', 'http://localhost:3000/api/leads'),
@@ -30,7 +31,7 @@ export const config = {
   },
 };
 
-if (!config.srhtDomain) config.srhtDomain = new URL(config.siteUrl).host;
+if (!config.tiinyDomain) config.tiinyDomain = new URL(config.siteUrl).host;
 
 // Brand facts used across every generated page. Change the phone number here only.
 export const brand = {

@@ -163,10 +163,17 @@
     <section data-view="publish" hidden>
       <h1>Build &amp; publish</h1>
       <div class="panel">
-        <p>Every save rebuilds the static site automatically (pages, <code>sitemap.xml</code>, <code>feed.xml</code>, <code>llms.txt</code>, <code>llms-full.txt</code>, <code>robots.txt</code>). Publishing uploads the build to srht.site.</p>
+        <p>Every save rebuilds the static site automatically (pages, <code>sitemap.xml</code>, <code>feed.xml</code>, <code>llms.txt</code>, <code>llms-full.txt</code>, <code>robots.txt</code>).</p>
+        <h3>Free plan: upload the ZIP</h3>
+        <ol class="steps-list">
+          <li>Click <strong>Download site ZIP</strong>.</li>
+          <li>Open <a href="https://tiiny.host/manage" target="_blank" rel="noopener">tiiny.host/manage</a>. First time: <strong>Upload file</strong>, pick the ZIP and set the link name to the subdomain in your <code>SITE_URL</code>. After that: use <strong>Update</strong> on your project and pick the new ZIP (free plan: delete the old project and upload again with the same name).</li>
+        </ol>
+        <p id="zip-size" class="muted"></p>
         <div class="row">
+          <a class="btn btn--primary" id="btn-zip" href="/admin/api/site.zip">Download site ZIP</a>
           <button class="btn" id="btn-build">Rebuild now</button>
-          <button class="btn btn--primary" id="btn-publish">Publish to srht.site</button>
+          <button class="btn" id="btn-publish">Publish via tiiny.host API (Solo plan+)</button>
         </div>
         <p id="publish-msg" class="msg" role="status"></p>
         <dl class="kv" id="publish-status"></dl>

@@ -107,7 +107,7 @@
     }
     setNav(parts[0]);
     if (parts[0] === 'leads') { show('leads'); return loadLeads(); }
-    if (parts[0] === 'publish') { show('publish'); return refreshStatus(); }
+    if (parts[0] === 'publish') { show('publish'); loadZipSize(); return refreshStatus(); }
     show('dashboard');
     loadDashboard();
   }
@@ -132,8 +132,8 @@
       var p = s.lastPublish;
       $('#publish-status').innerHTML =
         '<dt>Live site</dt><dd><a href="' + esc(s.siteUrl) + '/">' + esc(s.siteUrl) + '</a></dd>' +
-        '<dt>srht.site domain</dt><dd>' + esc(s.srhtDomain) + '</dd>' +
-        '<dt>Publish token</dt><dd>' + (s.publishConfigured ? '✅ configured' : '⚠️ SRHT_TOKEN missing in .env') + '</dd>' +
+        '<dt>tiiny.host site</dt><dd>' + esc(s.tiinyDomain) + '</dd>' +
+        '<dt>API publishing</dt><dd>' + (s.publishConfigured ? '✅ TIINY_API_KEY configured' : 'Off – free plan: use Download site ZIP') + '</dd>' +
         '<dt>Auto-publish on save</dt><dd>' + (s.autoPublish ? 'On' : 'Off') + '</dd>' +
         '<dt>Last build</dt><dd>' + (b.builtAt ? fmt(b.builtAt) + ' · ' + b.sitemapUrls + ' URLs in sitemap · ' + b.ms + ' ms' : '—') + '</dd>' +
         '<dt>Last publish</dt><dd>' + (p ? (p.ok ? '✅ ' + fmt(p.at) : '❌ ' + esc(p.error)) : 'Not published this session') + '</dd>';
@@ -503,9 +503,19 @@
 
   // ---- build & publish -------------------------------------------------------
 
+  var FREE_LIMIT = 3 * 1024 * 1024;
+  function loadZipSize() {
+    api('GET', '/site-size').then(function (r) {
+      var mb = (r.bytes / 1024 / 1024).toFixed(2);
+      $('#zip-size').textContent = 'Current ZIP size: ' + mb + ' MB' +
+        (r.bytes > FREE_LIMIT ? ' – ⚠️ over the 3 MB free-plan limit. Compress images or upgrade.' : ' (free plan limit: 3 MB)');
+    }).catch(function () {});
+  }
+
   $('#btn-build').addEventListener('click', function () {
     api('POST', '/build').then(function (r) {
       $('#publish-msg').textContent = 'Built ' + r.sitemapUrls + ' URLs in ' + r.ms + ' ms.';
+      loadZipSize();
       refreshStatus();
     }).catch(function (err) { $('#publish-msg').textContent = err.message; });
   });
@@ -513,9 +523,9 @@
   $('#btn-publish').addEventListener('click', function () {
     var btn = this;
     btn.disabled = true;
-    $('#publish-msg').textContent = 'Publishing to srht.site…';
+    $('#publish-msg').textContent = 'Publishing to tiiny.host…';
     api('POST', '/publish').then(function (r) {
-      $('#publish-msg').textContent = '✅ Published to ' + r.url + ' (' + r.method + ')';
+      $('#publish-msg').textContent = '✅ Published to ' + r.url + ' (' + r.method + ', ' + (r.bytes / 1024 / 1024).toFixed(2) + ' MB)';
       refreshStatus();
     }).catch(function (err) {
       $('#publish-msg').textContent = '❌ ' + err.message;

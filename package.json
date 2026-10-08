@@ -1,7 +1,7 @@
 {
   "name": "agt-tinyhost",
   "version": "1.0.0",
-  "description": "Promotional static site for AirlinesGroupTravel.com hosted on srht.site, with an admin portal for blog posts, flight pages and leads.",
+  "description": "Promotional static site for AirlinesGroupTravel.com hosted on tiiny.host, with an admin portal for blog posts, flight pages and leads.",
   "type": "module",
   "private": true,
   "engines": { "node": ">=22.13" },
@@ -9,7 +9,8 @@
     "start": "node --env-file-if-exists=.env server.js",
     "dev": "node --watch --env-file-if-exists=.env server.js",
     "build": "node --env-file-if-exists=.env scripts/build.js",
-    "publish:srht": "node --env-file-if-exists=.env scripts/publish.js",
+    "zip": "node --env-file-if-exists=.env scripts/zip.js",
+    "publish:tiiny": "node --env-file-if-exists=.env scripts/publish.js",
     "icons": "node scripts/generate-icons.js"
   },
   "license": "UNLICENSED",

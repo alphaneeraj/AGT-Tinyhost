@@ -5,7 +5,7 @@ import express from 'express';
 import { config, ROOT } from './src/config.js';
 import { leads, posts, slugify } from './src/db.js';
 import { buildSite } from './src/build.js';
-import { publishSite } from './src/publish.js';
+import { makeSiteZip, publishSite } from './src/publish.js';
 
 const app = express();
 app.disable('x-powered-by');
@@ -17,7 +17,7 @@ const state = { lastBuild: null, lastPublish: null, publishing: false };
 
 function rebuild() {
   state.lastBuild = buildSite();
-  if (config.autoPublish && config.srhtToken) schedulePublish();
+  if (config.autoPublish && config.tiinyApiKey) schedulePublish();
   return state.lastBuild;
 }
 
@@ -109,7 +109,7 @@ function rateLimiter({ windowMs, max }) {
 const loginLimited = rateLimiter({ windowMs: 15 * 60 * 1000, max: 10 });
 const leadLimited = rateLimiter({ windowMs: 10 * 60 * 1000, max: 5 });
 
-// ---- public lead endpoint (the static srht.site form posts here) ----------------
+// ---- public lead endpoint (the static site's form posts here) ----------------
 
 const siteOrigin = new URL(config.siteUrl).origin;
 const allowedOrigins = new Set(
@@ -203,9 +203,9 @@ api.get('/me', (req, res) => res.json({ user: req.admin }));
 api.get('/status', (req, res) => {
   res.json({
     siteUrl: config.siteUrl,
-    srhtDomain: config.srhtDomain,
+    tiinyDomain: config.tiinyDomain,
     leadEndpoint: config.leadEndpoint,
-    publishConfigured: !!config.srhtToken,
+    publishConfigured: !!config.tiinyApiKey,
     autoPublish: config.autoPublish,
     publishing: state.publishing,
     lastBuild: state.lastBuild,
@@ -366,6 +366,26 @@ api.post('/build', (req, res) => {
   try { res.json(rebuild()); } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// ZIP of the whole site for manual upload at tiiny.host/manage (works on the free plan).
+api.get('/site.zip', (req, res) => {
+  try {
+    rebuild();
+    const zip = makeSiteZip();
+    res.set({
+      'Content-Type': 'application/zip',
+      'Content-Disposition': `attachment; filename="agt-site-${new Date().toISOString().slice(0, 10)}.zip"`,
+      'X-Zip-Bytes': String(zip.length),
+    });
+    res.send(zip);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+api.get('/site-size', (req, res) => {
+  try { res.json({ bytes: makeSiteZip().length }); } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 api.post('/publish', async (req, res) => {
   try {
     rebuild();
@@ -399,6 +419,6 @@ rebuild();
 app.listen(config.port, () => {
   console.log(`AGT admin:   http://localhost:${config.port}/admin/`);
   console.log(`Preview:     http://localhost:${config.port}/`);
-  console.log(`Live site:   ${config.siteUrl}  (publish ${config.srhtToken ? 'ready' : 'needs SRHT_TOKEN'})`);
+  console.log(`Live site:   ${config.siteUrl}  (API publish ${config.tiinyApiKey ? 'ready' : 'off – use Download site ZIP'})`);
   console.log(`Lead form →  ${config.leadEndpoint}`);
 });
