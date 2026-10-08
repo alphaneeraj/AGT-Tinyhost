@@ -98,6 +98,7 @@ Until step 6 is done, the quote form asks visitors to call +1-888-609-1015 inste
 | `siteUrl` | Public URL of the site (used in canonical URLs, sitemap, OG tags). |
 | `repo` / `branch` | Where the admin saves content. |
 | `leadsWebAppUrl` | Apps Script web app URL for the quote form and the Leads page. |
+| `googleSiteVerification` | Google Search Console verification code (added as a meta tag on every page). |
 
 ## Local preview (optional)
 

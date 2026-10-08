@@ -24,6 +24,8 @@ export const config = {
   branch: file.branch || 'main',
   // Free lead inbox: Google Apps Script web app URL (…/exec) from google-apps-script/Code.gs.
   leadsWebAppUrl: env('LEADS_WEBAPP_URL', file.leadsWebAppUrl || ''),
+  // Google Search Console HTML-tag verification code (content="…" value only).
+  googleSiteVerification: file.googleSiteVerification || '',
   port: Number(env('PORT', '3000')),
   paths: {
     content: path.join(ROOT, 'content'),

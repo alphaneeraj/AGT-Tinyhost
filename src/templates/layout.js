@@ -356,7 +356,8 @@ ${(article.tags || []).map((t) => `<meta property="article:tag" content="${esc(t
 <link rel="alternate" hreflang="en-us" href="${esc(url)}" />
 <link rel="alternate" hreflang="x-default" href="${esc(url)}" />
 <meta name="author" content="${esc(article?.author || brand.name)}" />
-<meta name="theme-color" content="${brand.themeColor}" />
+<meta name="theme-color" content="${brand.themeColor}" />${config.googleSiteVerification ? `
+<meta name="google-site-verification" content="${esc(config.googleSiteVerification)}" />` : ''}
 <meta name="format-detection" content="telephone=yes" />
 <meta property="og:locale" content="en_US" />
 <meta property="og:site_name" content="${esc(brand.name)}" />
